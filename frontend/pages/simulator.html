@@ -1,373 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>What-If Simulator — ChurnGuard</title>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulator — ChurnGuard</title>
   <link rel="stylesheet" href="../assets/style.css"/>
   <style>
-    .sim-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-    }
-    @media (max-width: 750px) { .sim-grid { grid-template-columns: 1fr; } }
-
-    .scenario-label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 14px;
-    }
-    .delta-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px;
-      text-align: center;
-      margin-bottom: 24px;
-    }
-    .delta-number {
-      font-size: 3rem;
-      font-weight: 700;
-      margin: 12px 0 6px;
-    }
-    .arrow-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-    .prob-box {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px 24px;
-      text-align: center;
-      min-width: 120px;
-    }
-    .prob-box .lbl { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
-    .prob-box .val { font-size: 1.8rem; font-weight: 700; }
-    .arrow-icon { font-size: 1.8rem; color: var(--muted); }
-
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 10px;
-      margin-bottom: 24px;
-    }
-    .quick-btn {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      cursor: pointer;
-      text-align: left;
-      transition: border-color 0.2s;
-      color: var(--text);
-      font-size: 0.85rem;
-    }
-    .quick-btn:hover { border-color: var(--accent); }
-    .quick-btn .ql  { font-weight: 600; display: block; margin-bottom: 2px; }
-    .quick-btn .qd  { color: var(--muted); font-size: 0.78rem; }
+    .page-header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 720px) { .sim-grid { grid-template-columns: 1fr; } }
+    .scenario-tag { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 14px; }
+    .tag-a { background: var(--accent-dim); color: var(--accent); }
+    .tag-b { background: #F0FDF9; color: #059669; }
+    .slider-row { margin-bottom: 14px; }
+    .slider-row label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.78rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .slider-val { font-family: 'DM Mono', monospace; font-size: 0.82rem; color: var(--text); font-weight: 500; }
+    input[type=range] { -webkit-appearance:none; width:100%; height:4px; background:var(--border); border-radius:2px; outline:none; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); cursor:pointer; border: 2px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.15); }
+    input[type=range]::-moz-range-thumb { width:14px; height:14px; border-radius:50%; background:var(--accent); cursor:pointer; border:2px solid white; }
+    .score-display { text-align:center; padding: 20px 0 4px; }
+    .score-pct { font-size: 2.4rem; font-weight: 600; font-family: 'DM Mono', monospace; letter-spacing: -0.05em; line-height: 1; }
+    .score-lbl { font-size: 0.8rem; color: var(--muted); margin-top: 5px; }
+    .delta-card { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 28px; text-align: center; }
+    .delta-num { font-size: 2.8rem; font-weight: 600; font-family: 'DM Mono', monospace; letter-spacing: -0.05em; }
+    .delta-label { font-size: 0.88rem; color: var(--muted); margin-top: 6px; }
+    .presets-bar { background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 22px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .preset-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px; }
+    .preset-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 6px 13px; font-size: 0.8rem; font-family: 'DM Sans', sans-serif; color: var(--text2); cursor: pointer; transition: all 0.14s; white-space: nowrap; }
+    .preset-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .mini-ring { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+    .mini-ring svg { transform: rotate(-90deg); }
+    .mini-ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 600; font-family: 'DM Mono', monospace; }
+    .arrow-divider { display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--muted); padding: 8px 0; }
   </style>
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo">⚡ ChurnGuard</a>
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-mark"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2L11 5V9L7 12L3 9V5L7 2Z" stroke="white" stroke-width="1.2"/><circle cx="7" cy="7" r="1.5" fill="white"/></svg></div>
+      ChurnGuard
+    </a>
     <div class="nav-links">
       <a href="../index.html">Home</a>
-      <a href="predict.html">Predict</a>
+      <a href="predict.html">Predictor</a>
       <a href="simulator.html" class="active">Simulator</a>
       <a href="dashboard.html">Dashboard</a>
     </div>
+    <a href="predict.html" class="nav-cta">Try it →</a>
   </div>
 </nav>
 
-<div class="container page">
-
-  <h1>What-If Simulator</h1>
-  <p class="subtitle">
-    Change one attribute in the "Modified" scenario and instantly see how churn probability shifts.
-    This demonstrates the business impact of retention interventions.
-  </p>
-
-  <!-- Delta result card -->
-  <div class="delta-card" id="deltaCard">
-    <div style="color:var(--muted); font-size:0.9rem;">Run a simulation to see probability change</div>
-    <div class="arrow-row" id="arrowRow" style="display:none;">
-      <div class="prob-box">
-        <div class="lbl">Original</div>
-        <div class="val" id="origProb">—</div>
-      </div>
-      <div class="arrow-icon">→</div>
-      <div class="prob-box">
-        <div class="lbl">Modified</div>
-        <div class="val" id="modProb">—</div>
-      </div>
-      <div>
-        <div class="delta-number" id="deltaNum">—</div>
-        <div id="riskShift" style="font-size:0.85rem; color:var(--muted);"></div>
-      </div>
-    </div>
+<div class="container">
+  <div class="page-header">
+    <h1>What-If Simulator</h1>
+    <p class="subtitle" style="margin-bottom:0;">Adjust customer attributes in both scenarios and see how churn probability changes — instantly.</p>
   </div>
 
-  <!-- Quick action presets -->
-  <h3 style="margin-bottom:12px;">Quick-apply scenario changes</h3>
-  <div class="quick-actions">
-    <button class="quick-btn" onclick="applyPreset('contract')">
-      <span class="ql">Upgrade contract</span>
-      <span class="qd">Month-to-month → Annual</span>
-    </button>
-    <button class="quick-btn" onclick="applyPreset('discount')">
-      <span class="ql">Reduce charges 15%</span>
-      <span class="qd">Lower monthly cost</span>
-    </button>
-    <button class="quick-btn" onclick="applyPreset('support')">
-      <span class="ql">Add tech support</span>
-      <span class="qd">Enable TechSupport add-on</span>
-    </button>
-    <button class="quick-btn" onclick="applyPreset('security')">
-      <span class="ql">Add online security</span>
-      <span class="qd">Enable OnlineSecurity add-on</span>
-    </button>
-    <button class="quick-btn" onclick="applyPreset('autopay')">
-      <span class="ql">Switch to auto-pay</span>
-      <span class="qd">Electronic check → Bank transfer</span>
-    </button>
-    <button class="quick-btn" onclick="applyPreset('tenure')">
-      <span class="ql">Simulate 2yr loyalty</span>
-      <span class="qd">Extend tenure to 24 months</span>
-    </button>
-  </div>
-
-  <!-- Scenario side-by-side forms -->
-  <div class="sim-grid">
-
-    <!-- Original -->
-    <div class="card">
-      <div class="scenario-label">🔴 Original Customer</div>
-
-      <div class="form-group">
-        <label>Tenure (months)</label>
-        <input type="number" id="o_tenure" value="8"/>
-      </div>
-      <div class="form-group">
-        <label>Monthly Charges ($)</label>
-        <input type="number" id="o_monthly" value="85" step="0.01"/>
-      </div>
-      <div class="form-group">
-        <label>Total Charges ($)</label>
-        <input type="number" id="o_total" value="680" step="0.01"/>
-      </div>
-      <div class="form-group">
-        <label>Contract</label>
-        <select id="o_contract">
-          <option value="0" selected>Month-to-month</option>
-          <option value="1">One year</option>
-          <option value="2">Two year</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Payment Method</label>
-        <select id="o_payment">
-          <option value="0">Bank transfer</option>
-          <option value="1">Credit card</option>
-          <option value="2" selected>Electronic check</option>
-          <option value="3">Mailed check</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Tech Support</label>
-        <select id="o_tech">
-          <option value="0" selected>No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Online Security</label>
-        <select id="o_security">
-          <option value="0" selected>No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Internet Service</label>
-        <select id="o_internet">
-          <option value="0">DSL</option>
-          <option value="1" selected>Fiber optic</option>
-          <option value="2">No internet</option>
-        </select>
-      </div>
+  <div class="page">
+    <!-- Presets -->
+    <div class="presets-bar">
+      <span class="preset-label">Quick scenarios</span>
+      <button class="preset-btn" onclick="loadPreset('high_risk')">🔴 High-risk baseline</button>
+      <button class="preset-btn" onclick="loadPreset('upgrade_contract')">📄 Upgrade to annual</button>
+      <button class="preset-btn" onclick="loadPreset('reduce_charges')">💸 Reduce charges 20%</button>
+      <button class="preset-btn" onclick="loadPreset('new_vs_loyal')">🆕 New vs long-term</button>
+      <button class="preset-btn" onclick="loadPreset('fiber_vs_dsl')">📡 Fiber vs DSL</button>
     </div>
 
-    <!-- Modified -->
-    <div class="card" style="border-color: var(--accent);">
-      <div class="scenario-label">🟢 Modified Scenario</div>
+    <!-- Delta summary -->
+    <div class="delta-card" style="margin-bottom:16px;" id="deltaCard">
+      <div style="font-size:0.72rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Risk change (A → B)</div>
+      <div class="delta-num" id="deltaNum">—</div>
+      <div class="delta-label" id="deltaLabel">Run both scenarios to see the impact</div>
+    </div>
 
-      <div class="form-group">
-        <label>Tenure (months)</label>
-        <input type="number" id="m_tenure" value="8"/>
+    <!-- Scenarios side by side -->
+    <div class="sim-grid">
+
+      <!-- Scenario A -->
+      <div class="card">
+        <div class="scenario-tag tag-a">Scenario A — Before</div>
+        <div class="slider-row">
+          <label>Tenure (months) <span class="slider-val" id="a-tenure-val">8</span></label>
+          <input type="range" id="a-tenure" min="0" max="72" value="8" oninput="document.getElementById('a-tenure-val').textContent=this.value;debounce()">
+        </div>
+        <div class="slider-row">
+          <label>Monthly Charges ($) <span class="slider-val" id="a-monthly-val">80</span></label>
+          <input type="range" id="a-monthly" min="20" max="120" value="80" oninput="document.getElementById('a-monthly-val').textContent=this.value;debounce()">
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label>Contract</label>
+          <select id="a-contract" onchange="debounce()">
+            <option value="0">Month-to-month</option>
+            <option value="1">One year</option>
+            <option value="2">Two year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Internet</label>
+          <select id="a-internet" onchange="debounce()">
+            <option value="1">Fiber optic</option>
+            <option value="0">DSL</option>
+            <option value="2">None</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tech Support</label>
+          <select id="a-support" onchange="debounce()">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;align-items:center;gap:14px;" id="result-a">
+          <div class="mini-ring">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" stroke-width="5"/>
+              <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" stroke-width="5" id="ring-a"/>
+            </svg>
+            <div class="mini-ring-label" id="pct-a">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.88rem;font-weight:600;color:var(--text);" id="risk-label-a">—</div>
+            <div style="font-size:0.8rem;color:var(--muted);">Churn probability</div>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Monthly Charges ($)</label>
-        <input type="number" id="m_monthly" value="85" step="0.01"/>
+
+      <!-- Scenario B -->
+      <div class="card">
+        <div class="scenario-tag tag-b">Scenario B — After</div>
+        <div class="slider-row">
+          <label>Tenure (months) <span class="slider-val" id="b-tenure-val">8</span></label>
+          <input type="range" id="b-tenure" min="0" max="72" value="8" oninput="document.getElementById('b-tenure-val').textContent=this.value;debounce()">
+        </div>
+        <div class="slider-row">
+          <label>Monthly Charges ($) <span class="slider-val" id="b-monthly-val">64</span></label>
+          <input type="range" id="b-monthly" min="20" max="120" value="64" oninput="document.getElementById('b-monthly-val').textContent=this.value;debounce()">
+        </div>
+        <div class="form-group" style="margin-top:14px;">
+          <label>Contract</label>
+          <select id="b-contract" onchange="debounce()">
+            <option value="0">Month-to-month</option>
+            <option value="1" selected>One year</option>
+            <option value="2">Two year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Internet</label>
+          <select id="b-internet" onchange="debounce()">
+            <option value="1">Fiber optic</option>
+            <option value="0">DSL</option>
+            <option value="2">None</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tech Support</label>
+          <select id="b-support" onchange="debounce()">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;align-items:center;gap:14px;" id="result-b">
+          <div class="mini-ring">
+            <svg width="56" height="56" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" stroke-width="5"/>
+              <circle cx="28" cy="28" r="24" fill="none" stroke="var(--border)" stroke-width="5" id="ring-b"/>
+            </svg>
+            <div class="mini-ring-label" id="pct-b">—</div>
+          </div>
+          <div>
+            <div style="font-size:0.88rem;font-weight:600;color:var(--text);" id="risk-label-b">—</div>
+            <div style="font-size:0.8rem;color:var(--muted);">Churn probability</div>
+          </div>
+        </div>
       </div>
-      <div class="form-group">
-        <label>Total Charges ($)</label>
-        <input type="number" id="m_total" value="680" step="0.01"/>
-      </div>
-      <div class="form-group">
-        <label>Contract</label>
-        <select id="m_contract">
-          <option value="0" selected>Month-to-month</option>
-          <option value="1">One year</option>
-          <option value="2">Two year</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Payment Method</label>
-        <select id="m_payment">
-          <option value="0">Bank transfer</option>
-          <option value="1">Credit card</option>
-          <option value="2" selected>Electronic check</option>
-          <option value="3">Mailed check</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Tech Support</label>
-        <select id="m_tech">
-          <option value="0" selected>No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Online Security</label>
-        <select id="m_security">
-          <option value="0" selected>No</option>
-          <option value="1">Yes</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Internet Service</label>
-        <select id="m_internet">
-          <option value="0">DSL</option>
-          <option value="1" selected>Fiber optic</option>
-          <option value="2">No internet</option>
-        </select>
-      </div>
+
     </div>
   </div>
-
-  <button class="btn btn-primary" onclick="runSimulation()" id="simBtn"
-    style="width:100%; margin-top:8px; font-size:1rem; padding:14px;">
-    Run Simulation →
-  </button>
-
 </div>
 
 <script>
-  const API_BASE = window.location.hostname === "localhost"
-    ? "http://localhost:8000"
-    : "";
+  const API_BASE = window.location.hostname === "localhost" ? "http://localhost:8000" : "";
+  const CIRC = 2 * Math.PI * 24;
+  const COLORS = { HIGH:"var(--red)", MEDIUM:"var(--amber)", LOW:"var(--green)" };
+
+  const presets = {
+    high_risk:        { a:[6,90,0,1,0], b:[6,72,1,1,0] },
+    upgrade_contract: { a:[10,80,0,1,0], b:[10,80,2,1,0] },
+    reduce_charges:   { a:[8,90,0,1,0], b:[8,72,0,1,0] },
+    new_vs_loyal:     { a:[2,70,0,1,0], b:[48,70,1,1,1] },
+    fiber_vs_dsl:     { a:[8,85,0,1,0], b:[8,55,0,0,1] },
+  };
+  function loadPreset(key) {
+    const p = presets[key];
+    const set = (id, val, labelId) => { document.getElementById(id).value = val; document.getElementById(labelId).textContent = val; };
+    set("a-tenure", p.a[0], "a-tenure-val"); set("a-monthly", p.a[1], "a-monthly-val");
+    document.getElementById("a-contract").value = p.a[2]; document.getElementById("a-internet").value = p.a[3]; document.getElementById("a-support").value = p.a[4];
+    set("b-tenure", p.b[0], "b-tenure-val"); set("b-monthly", p.b[1], "b-monthly-val");
+    document.getElementById("b-contract").value = p.b[2]; document.getElementById("b-internet").value = p.b[3]; document.getElementById("b-support").value = p.b[4];
+    runBoth();
+  }
 
   function buildPayload(prefix) {
-    return {
-      SeniorCitizen: 0, Partner: 0, Dependents: 0,
-      PhoneService: 1, MultipleLines: 0,
-      OnlineBackup: 0, DeviceProtection: 0,
-      StreamingTV: 0, StreamingMovies: 0,
-      PaperlessBilling: 1,
-      tenure:          +document.getElementById(`${prefix}_tenure`).value,
-      MonthlyCharges:  +document.getElementById(`${prefix}_monthly`).value,
-      TotalCharges:    +document.getElementById(`${prefix}_total`).value,
-      Contract:        +document.getElementById(`${prefix}_contract`).value,
-      PaymentMethod:   +document.getElementById(`${prefix}_payment`).value,
-      TechSupport:     +document.getElementById(`${prefix}_tech`).value,
-      OnlineSecurity:  +document.getElementById(`${prefix}_security`).value,
-      InternetService: +document.getElementById(`${prefix}_internet`).value,
-    };
+    const t = +document.getElementById(`${prefix}-tenure`).value;
+    const m = +document.getElementById(`${prefix}-monthly`).value;
+    return { tenure:t, MonthlyCharges:m, TotalCharges:t*m, Contract:+document.getElementById(`${prefix}-contract`).value,
+      InternetService:+document.getElementById(`${prefix}-internet`).value, TechSupport:+document.getElementById(`${prefix}-support`).value,
+      PaymentMethod:2, PaperlessBilling:1, SeniorCitizen:0, Partner:0, Dependents:0, PhoneService:1, MultipleLines:0, OnlineSecurity:0, OnlineBackup:0, DeviceProtection:0, StreamingTV:0, StreamingMovies:0 };
   }
 
-  async function runSimulation() {
-    const btn = document.getElementById("simBtn");
-    btn.innerHTML = '<span class="spinner"></span> Simulating...';
-    btn.disabled = true;
+  function renderMini(id, pctId, labelId, data) {
+    const col = COLORS[data.risk];
+    const pct = Math.round(data.probability * 100);
+    const dash = CIRC * (1 - data.probability);
+    document.getElementById(id).style.stroke = col;
+    document.getElementById(id).setAttribute("stroke-dasharray", CIRC);
+    document.getElementById(id).setAttribute("stroke-dashoffset", CIRC);
+    setTimeout(() => { document.getElementById(id).style.transition = "stroke-dashoffset 0.7s ease"; document.getElementById(id).setAttribute("stroke-dashoffset", dash); }, 50);
+    document.getElementById(pctId).textContent = pct + "%";
+    document.getElementById(pctId).style.color = col;
+    document.getElementById(labelId).textContent = data.risk + " RISK";
+    document.getElementById(labelId).style.color = col;
+  }
 
+  async function runBoth() {
     try {
-      const res = await fetch(`${API_BASE}/api/simulate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ original: buildPayload("o"), modified: buildPayload("m") }),
-      });
-      const data = await res.json();
-      displayDelta(data);
-    } catch (err) {
-      alert("API error: " + err.message);
-    } finally {
-      btn.innerHTML = "Run Simulation →";
-      btn.disabled = false;
-    }
+      const [a, b] = await Promise.all([
+        fetch(`${API_BASE}/api/predict`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(buildPayload("a"))}).then(r=>r.json()),
+        fetch(`${API_BASE}/api/predict`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(buildPayload("b"))}).then(r=>r.json()),
+      ]);
+      renderMini("ring-a","pct-a","risk-label-a",a);
+      renderMini("ring-b","pct-b","risk-label-b",b);
+      const delta = Math.round((b.probability - a.probability) * 100);
+      const dc = document.getElementById("deltaCard");
+      document.getElementById("deltaNum").textContent = (delta > 0 ? "+" : "") + delta + " pp";
+      if (delta < 0) {
+        document.getElementById("deltaNum").style.color = "var(--green)";
+        document.getElementById("deltaLabel").textContent = `Risk reduced by ${Math.abs(delta)} percentage points — intervention is effective`;
+        dc.style.borderColor = "#A7F3D0"; dc.style.background = "#F0FDF9";
+      } else if (delta > 0) {
+        document.getElementById("deltaNum").style.color = "var(--red)";
+        document.getElementById("deltaLabel").textContent = `Risk increased by ${delta} percentage points`;
+        dc.style.borderColor = "#FECACA"; dc.style.background = "#FFF5F5";
+      } else {
+        document.getElementById("deltaNum").style.color = "var(--muted)";
+        document.getElementById("deltaLabel").textContent = "No change in risk between scenarios";
+        dc.style.borderColor = "var(--border)"; dc.style.background = "white";
+      }
+    } catch(e) { console.error(e); }
   }
 
-  function displayDelta(data) {
-    const origPct  = Math.round(data.original_probability * 100);
-    const modPct   = Math.round(data.modified_probability * 100);
-    const deltaPct = Math.round(data.probability_delta * 100);
-    const improved = deltaPct < 0;
-
-    document.getElementById("origProb").textContent = origPct + "%";
-    document.getElementById("origProb").style.color = riskColor(data.original_risk);
-    document.getElementById("modProb").textContent  = modPct + "%";
-    document.getElementById("modProb").style.color  = riskColor(data.modified_risk);
-
-    const deltaEl = document.getElementById("deltaNum");
-    deltaEl.textContent = (deltaPct > 0 ? "+" : "") + deltaPct + "%";
-    deltaEl.style.color = improved ? "var(--green)" : deltaPct === 0 ? "var(--muted)" : "var(--red)";
-
-    const shiftEl = document.getElementById("riskShift");
-    if (data.risk_changed) {
-      shiftEl.innerHTML = `Risk shifted: <strong>${data.original_risk}</strong> → <strong>${data.modified_risk}</strong>`;
-      shiftEl.style.color = improved ? "var(--green)" : "var(--red)";
-    } else {
-      shiftEl.innerHTML = `Risk unchanged: <strong>${data.original_risk}</strong>`;
-      shiftEl.style.color = "var(--muted)";
-    }
-
-    document.getElementById("arrowRow").style.display = "flex";
-    document.querySelector("#deltaCard > div:first-child").style.display = "none";
-    document.getElementById("deltaCard").scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-
-  function riskColor(risk) {
-    return risk === "HIGH" ? "var(--red)" : risk === "MEDIUM" ? "var(--amber)" : "var(--green)";
-  }
-
-  // ── Quick presets ──────────────────────────────────────────────────────────
-  function applyPreset(type) {
-    if (type === "contract") {
-      document.getElementById("m_contract").value = "1";
-    } else if (type === "discount") {
-      const orig = +document.getElementById("o_monthly").value;
-      document.getElementById("m_monthly").value = (orig * 0.85).toFixed(2);
-    } else if (type === "support") {
-      document.getElementById("m_tech").value = "1";
-    } else if (type === "security") {
-      document.getElementById("m_security").value = "1";
-    } else if (type === "autopay") {
-      document.getElementById("m_payment").value = "0";
-    } else if (type === "tenure") {
-      document.getElementById("m_tenure").value = "24";
-      document.getElementById("m_total").value  =
-        (+document.getElementById("o_monthly").value * 24).toFixed(2);
-    }
-  }
+  let timer;
+  function debounce() { clearTimeout(timer); timer = setTimeout(runBoth, 350); }
+  window.addEventListener("load", runBoth);
 </script>
 </body>
 </html>

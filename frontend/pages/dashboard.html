@@ -1,248 +1,187 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Dashboard — ChurnGuard</title>
   <link rel="stylesheet" href="../assets/style.css"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
-    .charts-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 24px;
-    }
-    @media (max-width: 700px) { .charts-row { grid-template-columns: 1fr; } }
-    canvas { max-height: 260px; }
-    .driver-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-      font-size: 0.9rem;
-    }
-    .driver-label { flex: 0 0 170px; }
-    .driver-bar-wrap {
-      flex: 1; height: 8px;
-      background: var(--surface2);
-      border-radius: 4px; overflow: hidden;
-    }
-    .driver-bar {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 4px;
-      transition: width 0.8s ease;
-    }
-    .driver-pct { flex: 0 0 40px; text-align: right; color: var(--muted); font-size: 0.82rem; }
-    .risk-dot {
-      width: 10px; height: 10px;
-      border-radius: 50%; display: inline-block;
-      margin-right: 6px; flex-shrink: 0;
-    }
-    .dot-high   { background: var(--red);   }
-    .dot-medium { background: var(--amber); }
-    .dot-low    { background: var(--green); }
+    .page-header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .charts-row { display: grid; grid-template-columns: 280px 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 720px) { .charts-row { grid-template-columns: 1fr; } }
+    .driver-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 0.875rem; }
+    .driver-label { flex: 0 0 160px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .driver-track { flex: 1; height: 7px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+    .driver-bar   { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+    .driver-pct   { flex: 0 0 36px; text-align: right; font-size: 0.78rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .risk-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; flex-shrink: 0; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+    .filter-btn { background: white; border: 1px solid var(--border); border-radius: 7px; padding: 6px 13px; font-size: 0.8rem; font-family: 'DM Sans', sans-serif; color: var(--text2); cursor: pointer; transition: all 0.14s; }
+    .filter-btn:hover, .filter-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .filter-btn.active-high   { border-color: var(--red);   color: var(--red);   background: var(--red-dim); }
+    .filter-btn.active-medium { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+    .filter-btn.active-low    { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+    .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 0.9rem; }
+    canvas { max-height: 220px; }
   </style>
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo">⚡ ChurnGuard</a>
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-mark"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2L11 5V9L7 12L3 9V5L7 2Z" stroke="white" stroke-width="1.2"/><circle cx="7" cy="7" r="1.5" fill="white"/></svg></div>
+      ChurnGuard
+    </a>
     <div class="nav-links">
       <a href="../index.html">Home</a>
-      <a href="predict.html">Predict</a>
+      <a href="predict.html">Predictor</a>
       <a href="simulator.html">Simulator</a>
       <a href="dashboard.html" class="active">Dashboard</a>
     </div>
+    <a href="predict.html" class="nav-cta">Try it →</a>
   </div>
 </nav>
 
-<div class="container page">
-
-  <h1>Risk Dashboard</h1>
-  <p class="subtitle">Overview of churn risk distribution, top drivers, and customer risk rankings.</p>
-
-  <!-- KPI stat cards -->
-  <div class="stat-grid" id="kpiCards">
-    <div class="card" style="text-align:center;padding:20px;">
-      <div class="spinner" style="margin:0 auto;"></div>
-    </div>
+<div class="container">
+  <div class="page-header">
+    <h1>Risk Dashboard</h1>
+    <p class="subtitle" style="margin-bottom:0;">Portfolio overview of customer churn risk distribution, top drivers, and individual risk scores.</p>
   </div>
 
-  <!-- Charts row -->
-  <div class="charts-row">
-    <div class="card">
-      <h3>Risk Distribution</h3>
-      <canvas id="donutChart"></canvas>
+  <div class="page">
+    <!-- Metric cards -->
+    <div class="metric-grid" id="metrics">
+      <div class="metric-card"><div class="val">—</div><div class="lbl">Total customers</div></div>
+      <div class="metric-card"><div class="val" style="color:var(--red)">—</div><div class="lbl">High risk</div></div>
+      <div class="metric-card"><div class="val" style="color:var(--amber)">—</div><div class="lbl">Medium risk</div></div>
+      <div class="metric-card"><div class="val" style="color:var(--green)">—</div><div class="lbl">Low risk</div></div>
+      <div class="metric-card"><div class="val" style="color:var(--accent)">—</div><div class="lbl">Avg probability</div></div>
     </div>
-    <div class="card">
-      <h3>Top Churn Drivers</h3>
-      <div id="driversChart" style="margin-top:8px;"></div>
-    </div>
-  </div>
 
-  <!-- Customer table -->
-  <div class="card">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
-      <h3 style="margin:0;">Customer Risk Table</h3>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn btn-ghost" style="padding:6px 14px; font-size:0.85rem;" onclick="filterTable('ALL')">All</button>
-        <button class="btn btn-ghost" style="padding:6px 14px; font-size:0.85rem; color:var(--red);" onclick="filterTable('HIGH')">High Risk</button>
-        <button class="btn btn-ghost" style="padding:6px 14px; font-size:0.85rem; color:var(--amber);" onclick="filterTable('MEDIUM')">Medium</button>
-        <button class="btn btn-ghost" style="padding:6px 14px; font-size:0.85rem; color:var(--green);" onclick="filterTable('LOW')">Low Risk</button>
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="card">
+        <h3>Risk distribution</h3>
+        <canvas id="donut-chart"></canvas>
+      </div>
+      <div class="card">
+        <h3>Top churn drivers</h3>
+        <div id="driver-bars"><div class="empty-state">Loading...</div></div>
       </div>
     </div>
-    <div style="overflow-x:auto;">
-      <table id="customerTable">
-        <thead>
-          <tr>
-            <th>Customer ID</th>
-            <th>Tenure (mo.)</th>
-            <th>Monthly ($)</th>
-            <th>Contract</th>
-            <th>Churn Prob.</th>
-            <th>Risk</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr><td colspan="6" style="text-align:center; color:var(--muted); padding:24px;">Loading...</td></tr>
-        </tbody>
-      </table>
+
+    <!-- Customer table -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <h3 style="margin:0;">Customer risk table</h3>
+        <div class="filter-bar" style="margin:0;">
+          <button class="filter-btn active" id="btn-all"    onclick="filterTable('')">All</button>
+          <button class="filter-btn"        id="btn-high"   onclick="filterTable('HIGH')">🔴 High</button>
+          <button class="filter-btn"        id="btn-medium" onclick="filterTable('MEDIUM')">🟡 Medium</button>
+          <button class="filter-btn"        id="btn-low"    onclick="filterTable('LOW')">🟢 Low</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th><th>Tenure</th><th>Monthly $</th>
+              <th>Contract</th><th>Risk</th><th>Probability</th><th>CLV</th><th>Recommended action</th>
+            </tr>
+          </thead>
+          <tbody id="customer-table"><tr><td colspan="8" class="empty-state">Loading customer data...</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
-
 </div>
 
 <script>
-  const API_BASE = window.location.hostname === "localhost"
-    ? "http://localhost:8000"
-    : "";
-
-  const CONTRACT_LABELS = ["Month-to-month", "One year", "Two year"];
-  let allCustomers = [];
-  let donutChart   = null;
+  const API_BASE = window.location.hostname === "localhost" ? "http://localhost:8000" : "";
+  const CONTRACTS = ["Month-to-month","One year","Two year"];
+  let allData = [], donutChart = null;
 
   async function loadDashboard() {
     try {
-      const [statsRes, custsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/dashboard`),
-        fetch(`${API_BASE}/api/dashboard/customers`),
+      const [stats, customers] = await Promise.all([
+        fetch(`${API_BASE}/api/dashboard`).then(r=>r.json()),
+        fetch(`${API_BASE}/api/dashboard/customers`).then(r=>r.json()),
       ]);
-      const stats   = await statsRes.json();
-      const customers = await custsRes.json();
-      allCustomers  = customers;
-
-      renderKPIs(stats);
+      allData = customers;
+      renderMetrics(stats);
       renderDonut(stats);
       renderDrivers(stats.top_churn_drivers);
       renderTable(customers);
-    } catch (err) {
-      document.getElementById("kpiCards").innerHTML =
-        `<div class="card" style="color:var(--red); padding:20px;">
-          API error: ${err.message}. Make sure the API is running.
-        </div>`;
+    } catch(e) {
+      document.getElementById("customer-table").innerHTML = `<tr><td colspan="8" class="empty-state">⚠️ API not reachable — start the backend first.</td></tr>`;
     }
   }
 
-  function renderKPIs(stats) {
-    const avgPct = Math.round(stats.avg_probability * 100);
-    document.getElementById("kpiCards").innerHTML = `
-      <div class="stat-card">
-        <div class="stat-value">${stats.total_customers}</div>
-        <div class="stat-label">Total Customers</div>
-      </div>
-      <div class="stat-card stat-high">
-        <div class="stat-value">${stats.high_risk_count}</div>
-        <div class="stat-label">High Risk</div>
-      </div>
-      <div class="stat-card stat-medium">
-        <div class="stat-value">${stats.medium_risk_count}</div>
-        <div class="stat-label">Medium Risk</div>
-      </div>
-      <div class="stat-card stat-low">
-        <div class="stat-value">${stats.low_risk_count}</div>
-        <div class="stat-label">Low Risk</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">${avgPct}%</div>
-        <div class="stat-label">Avg. Churn Probability</div>
-      </div>`;
+  function renderMetrics(s) {
+    const vals = document.querySelectorAll("#metrics .val");
+    vals[0].textContent = s.total_customers;
+    vals[1].textContent = s.high_risk_count;
+    vals[2].textContent = s.medium_risk_count;
+    vals[3].textContent = s.low_risk_count;
+    vals[4].textContent = (s.avg_probability * 100).toFixed(1) + "%";
   }
 
-  function renderDonut(stats) {
-    const ctx = document.getElementById("donutChart").getContext("2d");
+  function renderDonut(s) {
+    const ctx = document.getElementById("donut-chart");
     if (donutChart) donutChart.destroy();
     donutChart = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: ["High Risk", "Medium Risk", "Low Risk"],
-        datasets: [{
-          data: [stats.high_risk_count, stats.medium_risk_count, stats.low_risk_count],
-          backgroundColor: ["rgba(248,113,113,0.85)", "rgba(251,191,36,0.85)", "rgba(52,211,153,0.85)"],
-          borderColor: ["#f87171", "#fbbf24", "#34d399"],
-          borderWidth: 2,
-          hoverOffset: 8,
-        }],
+        labels: ["High", "Medium", "Low"],
+        datasets: [{ data: [s.high_risk_count, s.medium_risk_count, s.low_risk_count],
+          backgroundColor: ["#E53E3E","#D97706","#059669"],
+          borderColor: "white", borderWidth: 3, hoverOffset: 4 }]
       },
       options: {
-        cutout: "65%",
+        responsive: true, maintainAspectRatio: true, cutout: "70%",
         plugins: {
-          legend: {
-            position: "bottom",
-            labels: { color: "#8b90b5", font: { size: 12 }, padding: 16 },
-          },
-        },
-        animation: { animateScale: true },
-      },
+          legend: { position: "bottom", labels: { color: "#7A8499", font: { family:"'DM Sans', sans-serif", size:12 }, padding:16, usePointStyle:true, pointStyleWidth:8 } }
+        }
+      }
     });
   }
 
   function renderDrivers(drivers) {
-    const max = drivers[0].importance;
-    document.getElementById("driversChart").innerHTML = drivers.map(d => `
+    const max = drivers[0]?.importance || 1;
+    document.getElementById("driver-bars").innerHTML = drivers.map(d => `
       <div class="driver-row">
         <div class="driver-label">${d.feature}</div>
-        <div class="driver-bar-wrap">
-          <div class="driver-bar" style="width:${(d.importance / max * 100).toFixed(1)}%"></div>
-        </div>
-        <div class="driver-pct">${(d.importance * 100).toFixed(0)}%</div>
-      </div>`).join("");
+        <div class="driver-track"><div class="driver-bar" style="width:${(d.importance/max*100).toFixed(1)}%"></div></div>
+        <div class="driver-pct">${(d.importance*100).toFixed(0)}%</div>
+      </div>`).join('');
   }
 
-  function renderTable(customers) {
-    const riskColors = { HIGH: "var(--red)", MEDIUM: "var(--amber)", LOW: "var(--green)" };
-    const dotClass   = { HIGH: "dot-high",   MEDIUM: "dot-medium",   LOW: "dot-low"   };
+  function filterTable(risk) {
+    ["all","high","medium","low"].forEach(k => {
+      const btn = document.getElementById(`btn-${k}`);
+      btn.className = "filter-btn";
+      if ((k==="all"&&risk==="")||(k===risk.toLowerCase())) {
+        btn.className = `filter-btn ${risk ? "active-"+risk.toLowerCase() : "active"}`;
+      }
+    });
+    renderTable(risk ? allData.filter(c=>c.risk===risk) : allData);
+  }
 
-    document.getElementById("tableBody").innerHTML = customers.map(c => `
+  function renderTable(data) {
+    if (!data.length) { document.getElementById("customer-table").innerHTML = `<tr><td colspan="8" class="empty-state">No customers match this filter.</td></tr>`; return; }
+    const riskColors = { HIGH:"var(--red)", MEDIUM:"var(--amber)", LOW:"var(--green)" };
+    const riskClass  = { HIGH:"badge-high", MEDIUM:"badge-medium", LOW:"badge-low" };
+    document.getElementById("customer-table").innerHTML = data.map(c => `
       <tr>
-        <td><code style="color:var(--accent2)">${c.id}</code></td>
-        <td>${c.tenure}</td>
-        <td>$${c.monthly_charges.toFixed(2)}</td>
-        <td>${CONTRACT_LABELS[c.contract] || "—"}</td>
-        <td>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <div style="flex:1; height:6px; background:var(--surface2); border-radius:3px;">
-              <div style="width:${Math.round(c.probability*100)}%; height:100%; background:${riskColors[c.risk]}; border-radius:3px;"></div>
-            </div>
-            <span style="min-width:36px; color:${riskColors[c.risk]}; font-weight:600;">
-              ${Math.round(c.probability * 100)}%
-            </span>
-          </div>
-        </td>
-        <td>
-          <span class="risk-dot ${dotClass[c.risk]}"></span>
-          <span style="color:${riskColors[c.risk]}; font-weight:600;">${c.risk}</span>
-        </td>
-      </tr>`).join("");
-  }
-
-  function filterTable(level) {
-    const filtered = level === "ALL"
-      ? allCustomers
-      : allCustomers.filter(c => c.risk === level);
-    renderTable(filtered);
+        <td style="font-family:'DM Mono',monospace;font-size:0.82rem;">${c.id}</td>
+        <td>${c.tenure} mo</td>
+        <td>$${c.monthly_charges}</td>
+        <td style="font-size:0.82rem;">${CONTRACTS[c.contract]||c.contract}</td>
+        <td><span class="badge ${riskClass[c.risk]}">${c.risk}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600;color:${riskColors[c.risk]}">${Math.round(c.probability*100)}%</td>
+        <td><span class="tag">${c.clv_tier||'—'}</span></td>
+        <td style="font-size:0.82rem;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.recommendation||'—'}</td>
+      </tr>`).join('');
   }
 
   loadDashboard();

@@ -1,279 +1,329 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Predict — ChurnGuard</title>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Predictor — ChurnGuard</title>
   <link rel="stylesheet" href="../assets/style.css"/>
+  <style>
+    .page-header { padding: 36px 0 28px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .page-header h1 { margin-bottom: 4px; }
+    .two-col { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
+    @media (max-width: 860px) { .two-col { grid-template-columns: 1fr; } }
+    .input-section-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin: 22px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .input-section-label:first-of-type { margin-top: 0; }
+    .clv-matrix { display: grid; grid-template-columns: repeat(3,1fr); gap: 2px; background: var(--border); border-radius: 10px; overflow: hidden; font-size: 0.75rem; }
+    .clv-cell { background: white; padding: 10px 8px; text-align: center; }
+    .clv-cell.header { background: var(--surface2); font-weight: 600; color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .clv-cell.active { font-weight: 700; }
+    .result-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; color: var(--muted); text-align: center; gap: 12px; }
+    .placeholder-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .segment-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; color: var(--text2); }
+    .priority-banner { border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+    .priority-banner.CRITICAL { background: #FFF5F5; border: 1px solid #FECACA; }
+    .priority-banner.HIGH     { background: #FFF5F5; border: 1px solid #FECACA; }
+    .priority-banner.MEDIUM   { background: #FFFBEB; border: 1px solid #FDE68A; }
+    .priority-banner.LOW      { background: #F0FDF9; border: 1px solid #A7F3D0; }
+    .priority-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .priority-label { font-size: 0.82rem; font-weight: 600; }
+    .priority-sub   { font-size: 0.8rem; color: var(--muted); }
+  </style>
 </head>
 <body>
-
 <nav>
   <div class="nav-inner">
-    <a href="../index.html" class="nav-logo">⚡ ChurnGuard</a>
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-mark"><svg viewBox="0 0 14 14" fill="none"><path d="M7 2L11 5V9L7 12L3 9V5L7 2Z" stroke="white" stroke-width="1.2"/><circle cx="7" cy="7" r="1.5" fill="white"/></svg></div>
+      ChurnGuard
+    </a>
     <div class="nav-links">
       <a href="../index.html">Home</a>
-      <a href="predict.html" class="active">Predict</a>
+      <a href="predict.html" class="active">Predictor</a>
       <a href="simulator.html">Simulator</a>
       <a href="dashboard.html">Dashboard</a>
     </div>
+    <a href="predict.html" class="nav-cta">Try it →</a>
   </div>
 </nav>
 
-<div class="container page">
+<div class="container">
+  <div class="page-header">
+    <h1>Churn Predictor</h1>
+    <p class="subtitle" style="margin-bottom:0;">Enter customer attributes to get a churn risk score, SHAP breakdown, and retention recommendations.</p>
+  </div>
 
-  <h1>Churn Predictor</h1>
-  <p class="subtitle">Enter customer details to predict churn risk, get SHAP explanations, and see retention actions.</p>
+  <div class="two-col page">
 
-  <div class="two-col">
-
-    <!-- ── Input Form ─────────────────────────────────────────── -->
-    <div>
-      <div class="card">
-        <h2>Customer Details</h2>
-
-        <div class="form-grid">
-
-          <div class="form-group">
-            <label>Tenure (months)</label>
-            <input type="number" id="tenure" value="8" min="0" max="72"/>
-          </div>
-
-          <div class="form-group">
-            <label>Monthly Charges ($)</label>
-            <input type="number" id="monthlyCharges" value="80" min="0" step="0.01"/>
-          </div>
-
-          <div class="form-group">
-            <label>Total Charges ($)</label>
-            <input type="number" id="totalCharges" value="640" min="0" step="0.01"/>
-          </div>
-
-          <div class="form-group">
-            <label>Contract Type</label>
-            <select id="contract">
-              <option value="0">Month-to-month</option>
-              <option value="1">One year</option>
-              <option value="2">Two year</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Internet Service</label>
-            <select id="internetService">
-              <option value="0">DSL</option>
-              <option value="1" selected>Fiber optic</option>
-              <option value="2">No internet</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Payment Method</label>
-            <select id="paymentMethod">
-              <option value="0">Bank transfer</option>
-              <option value="1">Credit card</option>
-              <option value="2" selected>Electronic check</option>
-              <option value="3">Mailed check</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Tech Support</label>
-            <select id="techSupport">
-              <option value="0" selected>No</option>
-              <option value="1">Yes</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Online Security</label>
-            <select id="onlineSecurity">
-              <option value="0" selected>No</option>
-              <option value="1">Yes</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Senior Citizen</label>
-            <select id="seniorCitizen">
-              <option value="0" selected>No</option>
-              <option value="1">Yes</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Partner</label>
-            <select id="partner">
-              <option value="0" selected>No</option>
-              <option value="1">Yes</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Dependents</label>
-            <select id="dependents">
-              <option value="0" selected>No</option>
-              <option value="1">Yes</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Paperless Billing</label>
-            <select id="paperlessBilling">
-              <option value="1" selected>Yes</option>
-              <option value="0">No</option>
-            </select>
-          </div>
-
+    <!-- Input form -->
+    <div class="card">
+      <div class="input-section-label">Account info</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label>Tenure (months)</label>
+          <input type="number" id="tenure" value="8" min="0" max="72"/>
         </div>
-
-        <button class="btn btn-primary" onclick="runPrediction()" id="predictBtn" style="width:100%; margin-top:8px;">
-          Predict Churn Risk
-        </button>
+        <div class="form-group">
+          <label>Monthly Charges ($)</label>
+          <input type="number" id="monthlyCharges" value="80" min="0" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label>Total Charges ($)</label>
+          <input type="number" id="totalCharges" value="640" min="0" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label>Contract</label>
+          <select id="contract">
+            <option value="0">Month-to-month</option>
+            <option value="1">One year</option>
+            <option value="2">Two year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Method</label>
+          <select id="paymentMethod">
+            <option value="2">Electronic check</option>
+            <option value="3">Mailed check</option>
+            <option value="0">Bank transfer</option>
+            <option value="1">Credit card</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Paperless Billing</label>
+          <select id="paperlessBilling">
+            <option value="1">Yes</option>
+            <option value="0">No</option>
+          </select>
+        </div>
       </div>
+
+      <div class="input-section-label">Services</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label>Internet Service</label>
+          <select id="internetService">
+            <option value="1">Fiber optic</option>
+            <option value="0">DSL</option>
+            <option value="2">None</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tech Support</label>
+          <select id="techSupport">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Online Security</label>
+          <select id="onlineSecurity">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Streaming TV</label>
+          <select id="streamingTV">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="input-section-label">Demographics</div>
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label>Senior Citizen</label>
+          <select id="seniorCitizen"><option value="0">No</option><option value="1">Yes</option></select>
+        </div>
+        <div class="form-group">
+          <label>Has Partner</label>
+          <select id="partner"><option value="0">No</option><option value="1">Yes</option></select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" id="predictBtn" onclick="runPrediction()">
+        Analyse Churn Risk →
+      </button>
     </div>
 
-    <!-- ── Results Panel ──────────────────────────────────────── -->
+    <!-- Results panel -->
     <div id="resultsPanel">
-
-      <!-- Placeholder before first prediction -->
-      <div id="placeholder" class="card" style="text-align:center; padding:60px 28px; color:var(--muted);">
-        <div style="font-size:3rem; margin-bottom:16px;">🔮</div>
-        <p>Fill in the form and click<br><strong style="color:var(--text)">Predict Churn Risk</strong></p>
-      </div>
-
-      <!-- Results (hidden until API returns) -->
-      <div id="results" class="hidden">
-
-        <!-- Risk summary -->
-        <div class="card" id="riskCard">
-          <div class="prob-ring-wrap">
-            <div id="probRing"></div>
-            <div>
-              <div id="riskBadge" style="margin-bottom:8px;"></div>
-              <div id="priorityBadge" style="margin-bottom:12px; font-size:0.85rem; color:var(--muted);"></div>
-              <div id="clvBadge" style="font-size:0.85rem; color:var(--muted);"></div>
-            </div>
-          </div>
-          <div id="segmentTag" style="font-size:0.85rem; color:var(--muted); margin-top:4px;"></div>
+      <div class="card result-placeholder" id="placeholder">
+        <div class="placeholder-icon">🎯</div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px;">Ready to predict</div>
+          <div style="font-size:0.85rem;">Fill in the form and click Analyse</div>
         </div>
-
-        <!-- SHAP explanations -->
-        <div class="card mt-16">
-          <h3>Why this prediction?</h3>
-          <div id="shapChart"></div>
-        </div>
-
-        <!-- Recommendations -->
-        <div class="card mt-16">
-          <h3>Recommended Actions</h3>
-          <div id="recommendations"></div>
-        </div>
-
-        <!-- CLV Matrix -->
-        <div class="card mt-16">
-          <h3>CLV × Risk Priority Matrix</h3>
-          <div id="clvMatrix"></div>
-        </div>
-
       </div>
     </div>
 
   </div>
 </div>
 
-<!-- Component scripts -->
-<script src="../components/risk-badge.js"></script>
-<script src="../components/shap-chart.js"></script>
-<script src="../components/clv-matrix.js"></script>
-
 <script>
-  // ── CONFIG: update this after deploying to Vercel ─────────────────────────
-  const API_BASE = window.location.hostname === "localhost"
-    ? "http://localhost:8000"
-    : "";   // empty = same domain on Vercel
+  const API_BASE = window.location.hostname === "localhost" ? "http://localhost:8000" : "";
 
   async function runPrediction() {
     const btn = document.getElementById("predictBtn");
-    btn.innerHTML = '<span class="spinner"></span> Predicting...';
+    btn.innerHTML = '<span class="spinner"></span> Analysing...';
     btn.disabled = true;
 
     const payload = {
-      SeniorCitizen:     +document.getElementById("seniorCitizen").value,
-      Partner:           +document.getElementById("partner").value,
-      Dependents:        +document.getElementById("dependents").value,
-      tenure:            +document.getElementById("tenure").value,
-      Contract:          +document.getElementById("contract").value,
-      PaperlessBilling:  +document.getElementById("paperlessBilling").value,
-      PaymentMethod:     +document.getElementById("paymentMethod").value,
-      MonthlyCharges:    +document.getElementById("monthlyCharges").value,
-      TotalCharges:      +document.getElementById("totalCharges").value,
-      PhoneService:       1,
-      MultipleLines:      0,
-      InternetService:   +document.getElementById("internetService").value,
-      OnlineSecurity:    +document.getElementById("onlineSecurity").value,
-      OnlineBackup:       0,
-      DeviceProtection:   0,
-      TechSupport:       +document.getElementById("techSupport").value,
-      StreamingTV:        0,
-      StreamingMovies:    0,
+      tenure:           +document.getElementById("tenure").value,
+      MonthlyCharges:   +document.getElementById("monthlyCharges").value,
+      TotalCharges:     +document.getElementById("totalCharges").value,
+      Contract:         +document.getElementById("contract").value,
+      PaymentMethod:    +document.getElementById("paymentMethod").value,
+      PaperlessBilling: +document.getElementById("paperlessBilling").value,
+      InternetService:  +document.getElementById("internetService").value,
+      TechSupport:      +document.getElementById("techSupport").value,
+      OnlineSecurity:   +document.getElementById("onlineSecurity").value,
+      StreamingTV:      +document.getElementById("streamingTV").value,
+      SeniorCitizen:    +document.getElementById("seniorCitizen").value,
+      Partner:          +document.getElementById("partner").value,
+      Dependents: 0, PhoneService: 1, MultipleLines: 0,
+      OnlineBackup: 0, DeviceProtection: 0, StreamingMovies: 0
     };
 
     try {
-      const res  = await fetch(`${API_BASE}/api/predict`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const res  = await fetch(`${API_BASE}/api/predict`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload) });
       const data = await res.json();
-      displayResults(data);
-    } catch (err) {
-      alert("API error: " + err.message + "\n\nMake sure the API server is running.");
+      renderResults(data);
+    } catch(e) {
+      document.getElementById("resultsPanel").innerHTML = `
+        <div class="card" style="border-color:#FECACA;background:#FFF5F5;padding:24px;text-align:center;color:var(--red);">
+          <div style="font-weight:600;margin-bottom:6px;">Cannot reach API</div>
+          <div style="font-size:0.85rem;color:var(--muted);">Make sure the backend is running at ${API_BASE}</div>
+        </div>`;
     } finally {
-      btn.innerHTML = "Predict Churn Risk";
-      btn.disabled  = false;
+      btn.innerHTML = "Analyse Churn Risk →";
+      btn.disabled = false;
     }
   }
 
-  function displayResults(data) {
-    document.getElementById("placeholder").classList.add("hidden");
-    document.getElementById("results").classList.remove("hidden");
+  function renderResults(data) {
+    const pct = Math.round(data.probability * 100);
+    const riskColor = { HIGH:"var(--red)", MEDIUM:"var(--amber)", LOW:"var(--green)" }[data.risk];
+    const riskClass = { HIGH:"badge-high", MEDIUM:"badge-medium", LOW:"badge-low" }[data.risk];
+    const circ = 2 * Math.PI * 38;
+    const dash = circ * (1 - data.probability);
+    const maxImpact = Math.max(...data.top_factors.map(f => Math.abs(f.impact)));
+    const priorityColors = { CRITICAL:"#E53E3E", HIGH:"#E53E3E", MEDIUM:"#D97706", LOW:"#059669" };
+    const urgColors = { HIGH: riskColor, MEDIUM: "var(--amber)", LOW: "var(--green)" };
 
-    // Probability ring
-    document.getElementById("probRing").innerHTML = probRingHTML(data.probability, data.risk);
+    const shapBars = data.top_factors.map(f => {
+      const w = (Math.abs(f.impact) / maxImpact * 100).toFixed(1);
+      const col = f.impact > 0 ? "var(--red)" : "var(--green)";
+      return `<div class="shap-row">
+        <div class="shap-label">${f.label || f.feature}</div>
+        <div class="shap-bar-wrap"><div class="shap-bar ${f.impact>0?'positive':'negative'}" style="width:${w}%"></div></div>
+        <div class="shap-val">${f.impact>0?'+':''}${f.impact.toFixed(3)}</div>
+      </div>`;
+    }).join('');
 
-    // Badges
-    document.getElementById("riskBadge").innerHTML     = riskBadgeHTML(data.risk);
-    document.getElementById("priorityBadge").innerHTML = `Retention Priority: <strong>${data.priority}</strong>`;
-    document.getElementById("clvBadge").innerHTML      = `Customer Value Tier: <strong>${data.clv_tier}</strong>`;
-
-    // Segment
-    if (data.segment && data.segment.segment_name) {
-      document.getElementById("segmentTag").innerHTML =
-        `Segment: <strong>${data.segment.segment_name}</strong> — ${data.segment.description}`;
-    }
-
-    // SHAP chart
-    document.getElementById("shapChart").innerHTML = shapChartHTML(data.top_factors);
-
-    // Recommendations
-    document.getElementById("recommendations").innerHTML =
-      data.recommendations.map(r => `
-        <div class="rec-card urgency-${r.urgency}">
-          <div class="rec-action">${r.action}</div>
-          <div class="rec-reason">${r.reason}</div>
-          <div style="margin-top:6px;">
-            <span class="badge badge-${r.urgency.toLowerCase()}" style="font-size:0.75rem;">${r.urgency}</span>
-            <span style="font-size:0.78rem; color:var(--muted); margin-left:8px;">${r.category}</span>
-          </div>
-        </div>`).join("");
+    const recs = data.recommendations.map(r => {
+      const col = urgColors[r.urgency] || "var(--muted)";
+      return `<div class="rec-item">
+        <div class="rec-dot" style="background:${col}"></div>
+        <div><div class="rec-action">${r.action}</div><div class="rec-reason">${r.reason}</div></div>
+      </div>`;
+    }).join('');
 
     // CLV matrix
-    document.getElementById("clvMatrix").innerHTML =
-      clvMatrixHTML(data.risk, data.clv_tier, data.priority);
+    const priorities = [
+      ["CRITICAL","HIGH","MEDIUM"],
+      ["HIGH","MEDIUM","LOW"],
+      ["MEDIUM","LOW","LOW"]
+    ];
+    const riskIdx = {HIGH:0,MEDIUM:1,LOW:2}[data.risk];
+    const clvIdx  = {HIGH:0,MEDIUM:1,LOW:2}[data.clv_tier];
+    const matrixCells = [
+      `<div class="clv-cell header"></div>`,
+      `<div class="clv-cell header">CLV HIGH</div>`,
+      `<div class="clv-cell header">CLV MED</div>`,
+      `<div class="clv-cell header">CLV LOW</div>`,
+    ];
+    ['HIGH','MEDIUM','LOW'].forEach((r,ri) => {
+      matrixCells.push(`<div class="clv-cell header">${r}</div>`);
+      ['HIGH','MEDIUM','LOW'].forEach((c,ci) => {
+        const p = priorities[ri][ci];
+        const isActive = ri===riskIdx && ci===clvIdx;
+        const bg = isActive ? (p==='CRITICAL'||p==='HIGH'?'#FFF5F5':p==='MEDIUM'?'#FFFBEB':'#F0FDF9') : 'white';
+        const color = isActive ? priorityColors[p] : 'var(--muted)';
+        matrixCells.push(`<div class="clv-cell ${isActive?'active':''}" style="background:${bg};color:${color};">${p}</div>`);
+      });
+    });
 
-    // Scroll to results on mobile
-    document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    const segHtml = data.segment && data.segment.segment_name !== 'Unknown'
+      ? `<div style="margin-bottom:18px;"><div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Customer segment</div>
+          <span class="segment-chip">👤 ${data.segment.segment_name}</span>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:6px;">${data.segment.description||''}</div></div>` : '';
+
+    document.getElementById("resultsPanel").innerHTML = `
+      <!-- Score card -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="prob-ring-wrap">
+          <div class="prob-ring">
+            <svg width="88" height="88" viewBox="0 0 88 88">
+              <circle cx="44" cy="44" r="38" fill="none" stroke="var(--surface2)" stroke-width="7"/>
+              <circle cx="44" cy="44" r="38" fill="none" stroke="${riskColor}" stroke-width="7" stroke-linecap="round"
+                stroke-dasharray="${circ}" stroke-dashoffset="${circ}"
+                style="transition:stroke-dashoffset 0.9s cubic-bezier(.4,0,.2,1);"
+                id="ring-circle"/>
+            </svg>
+            <div class="prob-ring-label">
+              <div class="prob-pct" style="color:${riskColor}" id="prob-num">0%</div>
+              <div class="prob-sub">churn risk</div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+              <span class="badge ${riskClass}">${data.risk} RISK</span>
+              <span class="tag mono">${pct}% probability</span>
+            </div>
+            <div style="font-size:0.82rem;color:var(--muted);">CLV Tier: <strong style="color:var(--text2);">${data.clv_tier}</strong></div>
+          </div>
+        </div>
+
+        <div class="priority-banner ${data.priority}">
+          <div class="priority-dot" style="background:${priorityColors[data.priority]||'var(--muted)'}"></div>
+          <div>
+            <div class="priority-label" style="color:${priorityColors[data.priority]||'var(--text)'}">Priority: ${data.priority}</div>
+            <div class="priority-sub">Based on ${data.risk} churn risk × ${data.clv_tier} CLV</div>
+          </div>
+        </div>
+
+        ${segHtml}
+
+        <div style="font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;">SHAP — top churn drivers</div>
+        ${shapBars}
+        <div style="font-size:0.77rem;color:var(--muted);margin-top:8px;">Red = increases churn risk &nbsp;·&nbsp; Green = reduces churn risk</div>
+      </div>
+
+      <!-- CLV Matrix -->
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="margin-bottom:14px;">CLV × Risk Priority Matrix</h3>
+        <div class="clv-matrix">${matrixCells.join('')}</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-top:10px;">Your customer is highlighted above.</div>
+      </div>
+
+      <!-- Recommendations -->
+      <div class="card">
+        <h3 style="margin-bottom:4px;">Retention Recommendations</h3>
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:16px;">Top actions ranked by urgency</div>
+        ${recs}
+      </div>`;
+
+    // Animate ring
+    setTimeout(() => {
+      document.getElementById("ring-circle").style.strokeDashoffset = dash;
+      let start = 0, end = pct, dur = 900, t0 = performance.now();
+      const tick = now => {
+        const prog = Math.min((now-t0)/dur, 1);
+        document.getElementById("prob-num").textContent = Math.round(start + (end-start)*prog) + "%";
+        if(prog < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }, 50);
   }
 </script>
 </body>
