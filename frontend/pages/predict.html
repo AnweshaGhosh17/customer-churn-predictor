@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Predict — ChurnGuard</title>
+  <link rel="stylesheet" href="../assets/style.css"/>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="../index.html" class="nav-logo">⚡ ChurnGuard</a>
+    <div class="nav-links">
+      <a href="../index.html">Home</a>
+      <a href="predict.html" class="active">Predict</a>
+      <a href="simulator.html">Simulator</a>
+      <a href="dashboard.html">Dashboard</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container page">
+
+  <h1>Churn Predictor</h1>
+  <p class="subtitle">Enter customer details to predict churn risk, get SHAP explanations, and see retention actions.</p>
+
+  <div class="two-col">
+
+    <!-- ── Input Form ─────────────────────────────────────────── -->
+    <div>
+      <div class="card">
+        <h2>Customer Details</h2>
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label>Tenure (months)</label>
+            <input type="number" id="tenure" value="8" min="0" max="72"/>
+          </div>
+
+          <div class="form-group">
+            <label>Monthly Charges ($)</label>
+            <input type="number" id="monthlyCharges" value="80" min="0" step="0.01"/>
+          </div>
+
+          <div class="form-group">
+            <label>Total Charges ($)</label>
+            <input type="number" id="totalCharges" value="640" min="0" step="0.01"/>
+          </div>
+
+          <div class="form-group">
+            <label>Contract Type</label>
+            <select id="contract">
+              <option value="0">Month-to-month</option>
+              <option value="1">One year</option>
+              <option value="2">Two year</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Internet Service</label>
+            <select id="internetService">
+              <option value="0">DSL</option>
+              <option value="1" selected>Fiber optic</option>
+              <option value="2">No internet</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Method</label>
+            <select id="paymentMethod">
+              <option value="0">Bank transfer</option>
+              <option value="1">Credit card</option>
+              <option value="2" selected>Electronic check</option>
+              <option value="3">Mailed check</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Tech Support</label>
+            <select id="techSupport">
+              <option value="0" selected>No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Online Security</label>
+            <select id="onlineSecurity">
+              <option value="0" selected>No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Senior Citizen</label>
+            <select id="seniorCitizen">
+              <option value="0" selected>No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Partner</label>
+            <select id="partner">
+              <option value="0" selected>No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Dependents</label>
+            <select id="dependents">
+              <option value="0" selected>No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Paperless Billing</label>
+            <select id="paperlessBilling">
+              <option value="1" selected>Yes</option>
+              <option value="0">No</option>
+            </select>
+          </div>
+
+        </div>
+
+        <button class="btn btn-primary" onclick="runPrediction()" id="predictBtn" style="width:100%; margin-top:8px;">
+          Predict Churn Risk
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Results Panel ──────────────────────────────────────── -->
+    <div id="resultsPanel">
+
+      <!-- Placeholder before first prediction -->
+      <div id="placeholder" class="card" style="text-align:center; padding:60px 28px; color:var(--muted);">
+        <div style="font-size:3rem; margin-bottom:16px;">🔮</div>
+        <p>Fill in the form and click<br><strong style="color:var(--text)">Predict Churn Risk</strong></p>
+      </div>
+
+      <!-- Results (hidden until API returns) -->
+      <div id="results" class="hidden">
+
+        <!-- Risk summary -->
+        <div class="card" id="riskCard">
+          <div class="prob-ring-wrap">
+            <div id="probRing"></div>
+            <div>
+              <div id="riskBadge" style="margin-bottom:8px;"></div>
+              <div id="priorityBadge" style="margin-bottom:12px; font-size:0.85rem; color:var(--muted);"></div>
+              <div id="clvBadge" style="font-size:0.85rem; color:var(--muted);"></div>
+            </div>
+          </div>
+          <div id="segmentTag" style="font-size:0.85rem; color:var(--muted); margin-top:4px;"></div>
+        </div>
+
+        <!-- SHAP explanations -->
+        <div class="card mt-16">
+          <h3>Why this prediction?</h3>
+          <div id="shapChart"></div>
+        </div>
+
+        <!-- Recommendations -->
+        <div class="card mt-16">
+          <h3>Recommended Actions</h3>
+          <div id="recommendations"></div>
+        </div>
+
+        <!-- CLV Matrix -->
+        <div class="card mt-16">
+          <h3>CLV × Risk Priority Matrix</h3>
+          <div id="clvMatrix"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Component scripts -->
+<script src="../components/risk-badge.js"></script>
+<script src="../components/shap-chart.js"></script>
+<script src="../components/clv-matrix.js"></script>
+
+<script>
+  // ── CONFIG: update this after deploying to Vercel ─────────────────────────
+  const API_BASE = window.location.hostname === "localhost"
+    ? "http://localhost:8000"
+    : "";   // empty = same domain on Vercel
+
+  async function runPrediction() {
+    const btn = document.getElementById("predictBtn");
+    btn.innerHTML = '<span class="spinner"></span> Predicting...';
+    btn.disabled = true;
+
+    const payload = {
+      SeniorCitizen:     +document.getElementById("seniorCitizen").value,
+      Partner:           +document.getElementById("partner").value,
+      Dependents:        +document.getElementById("dependents").value,
+      tenure:            +document.getElementById("tenure").value,
+      Contract:          +document.getElementById("contract").value,
+      PaperlessBilling:  +document.getElementById("paperlessBilling").value,
+      PaymentMethod:     +document.getElementById("paymentMethod").value,
+      MonthlyCharges:    +document.getElementById("monthlyCharges").value,
+      TotalCharges:      +document.getElementById("totalCharges").value,
+      PhoneService:       1,
+      MultipleLines:      0,
+      InternetService:   +document.getElementById("internetService").value,
+      OnlineSecurity:    +document.getElementById("onlineSecurity").value,
+      OnlineBackup:       0,
+      DeviceProtection:   0,
+      TechSupport:       +document.getElementById("techSupport").value,
+      StreamingTV:        0,
+      StreamingMovies:    0,
+    };
+
+    try {
+      const res  = await fetch(`${API_BASE}/api/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      displayResults(data);
+    } catch (err) {
+      alert("API error: " + err.message + "\n\nMake sure the API server is running.");
+    } finally {
+      btn.innerHTML = "Predict Churn Risk";
+      btn.disabled  = false;
+    }
+  }
+
+  function displayResults(data) {
+    document.getElementById("placeholder").classList.add("hidden");
+    document.getElementById("results").classList.remove("hidden");
+
+    // Probability ring
+    document.getElementById("probRing").innerHTML = probRingHTML(data.probability, data.risk);
+
+    // Badges
+    document.getElementById("riskBadge").innerHTML     = riskBadgeHTML(data.risk);
+    document.getElementById("priorityBadge").innerHTML = `Retention Priority: <strong>${data.priority}</strong>`;
+    document.getElementById("clvBadge").innerHTML      = `Customer Value Tier: <strong>${data.clv_tier}</strong>`;
+
+    // Segment
+    if (data.segment && data.segment.segment_name) {
+      document.getElementById("segmentTag").innerHTML =
+        `Segment: <strong>${data.segment.segment_name}</strong> — ${data.segment.description}`;
+    }
+
+    // SHAP chart
+    document.getElementById("shapChart").innerHTML = shapChartHTML(data.top_factors);
+
+    // Recommendations
+    document.getElementById("recommendations").innerHTML =
+      data.recommendations.map(r => `
+        <div class="rec-card urgency-${r.urgency}">
+          <div class="rec-action">${r.action}</div>
+          <div class="rec-reason">${r.reason}</div>
+          <div style="margin-top:6px;">
+            <span class="badge badge-${r.urgency.toLowerCase()}" style="font-size:0.75rem;">${r.urgency}</span>
+            <span style="font-size:0.78rem; color:var(--muted); margin-left:8px;">${r.category}</span>
+          </div>
+        </div>`).join("");
+
+    // CLV matrix
+    document.getElementById("clvMatrix").innerHTML =
+      clvMatrixHTML(data.risk, data.clv_tier, data.priority);
+
+    // Scroll to results on mobile
+    document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+</script>
+</body>
+</html>

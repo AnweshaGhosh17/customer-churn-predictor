@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "frontend/**/*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "frontend/**/*.css",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "frontend/**/*.js",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "api/index.py" },
+    { "src": "/predict", "dest": "frontend/pages/predict.html" },
+    { "src": "/simulator", "dest": "frontend/pages/simulator.html" },
+    { "src": "/dashboard", "dest": "frontend/pages/dashboard.html" },
+    { "src": "/(.*)\\.css", "dest": "frontend/assets/$1.css" },
+    { "src": "/(.*)\\.js", "dest": "frontend/components/$1.js" },
+    { "src": "/", "dest": "frontend/index.html" }
+  ]
+}
