@@ -40,7 +40,7 @@ customer-churn-predictor/
 
 ---
 
-## 🚀 Quick Start (Absolute Beginner Guide)
+## 🚀 Quick Start 
 
 ### Step 1 — Clone the repository
 
