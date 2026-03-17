@@ -161,6 +161,9 @@ pytest tests/ -v
 | Layer | Technology |
 |---|---|
 | ML Model | XGBoost |
+| Accuracy | 0.7502 |
+| ROC-AUC | 0.8428 |
+| Dataset | Telco Churn — 7,043 customers × 21 features |
 | Explainability | SHAP (TreeExplainer) |
 | API | FastAPI + Uvicorn |
 | Validation | Pydantic v2 |
